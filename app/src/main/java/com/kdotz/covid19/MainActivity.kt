@@ -1,5 +1,6 @@
 package com.kdotz.covid19
 
+import android.app.AlertDialog
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import com.anychart.anychart.AnyChart
@@ -20,7 +21,11 @@ class MainActivity : AppCompatActivity() {
 
     lateinit var covidApiService: CovidApiService
 
-    lateinit var countryResponse: ArrayList<Model.CountryResponse>
+    var countryResponse: ArrayList<Model.CountryResponse> = arrayListOf()
+
+    lateinit var alertDialog: AlertDialog
+
+    val data = ArrayList<DataEntry>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,17 +33,10 @@ class MainActivity : AppCompatActivity() {
 
         getCurrentUSAConfirmed()
 
-        val pie = AnyChart.pie()
+        // Set up progress before call
+        //AlertDialog
+        // show it
 
-        val data = ArrayList<DataEntry>()
-        data.add(ValueDataEntry("John", 10000))
-        data.add(ValueDataEntry("Jake", 12000))
-        data.add(ValueDataEntry("Peter", 18000))
-
-        pie.setData(data)
-
-        val anyChartView = findViewById<AnyChartView>(R.id.any_chart_view)
-        anyChartView.setChart(pie)
     }
 
     private fun getCurrentUSAConfirmed() {
@@ -48,17 +46,20 @@ class MainActivity : AppCompatActivity() {
             .build()
         val service = retrofit.create(CovidApiService::class.java)
         val call = service.getUSAConfirmed()
+
         call.enqueue(object : Callback<ArrayList<Model.CountryResponse>> {
             override fun onResponse(
                 call: Call<ArrayList<Model.CountryResponse>>,
                 response: Response<ArrayList<Model.CountryResponse>>
             ) {
                 if (response.code() == 200) {
-                    val countryResponse = response.body()!!
+                    countryResponse = response.body()!!
 
                     countryResponse.forEach {
                         println("State ${it.provinceState}")
                     }
+
+                    populateCountryResponseChart(countryResponse)
                 }
             }
 
@@ -68,9 +69,24 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    fun populateCountryResponseChart(countryResponse: ArrayList<Model.CountryResponse>){
+
+        val pie = AnyChart.pie()
+
+        countryResponse.forEach{
+            data.add(ValueDataEntry(it.provinceState, it.active))
+        }
+//        data.add(ValueDataEntry("John", 10000))
+//        data.add(ValueDataEntry("Jake", 12000))
+//        data.add(ValueDataEntry("Peter", 18000))
+        pie.setData(data)
+
+        val anyChartView = findViewById<AnyChartView>(R.id.any_chart_view)
+        anyChartView.setChart(pie)
+    }
+
     companion object {
         var BaseUrl = "https://covid19.mathdro.id/api/"
     }
-
 
 }
