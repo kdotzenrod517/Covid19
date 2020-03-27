@@ -1,31 +1,27 @@
 package com.kdotz.covid19
 
-import android.app.AlertDialog
+import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import com.anychart.anychart.AnyChart
-import com.anychart.anychart.AnyChartView
-import com.anychart.anychart.DataEntry
-import com.anychart.anychart.ValueDataEntry
+import android.widget.ArrayAdapter
+import android.widget.Toast
+import android.widget.Toast.LENGTH_LONG
 import com.kdotz.covid19.model.Model
-import io.reactivex.disposables.Disposable
+import kotlinx.android.synthetic.main.activity_main.*
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.stream.Collectors
 
 class MainActivity : AppCompatActivity() {
 
-    private var disposable: Disposable? = null
-
-    lateinit var covidApiService: CovidApiService
-
     var countryResponse: ArrayList<Model.CountryResponse> = arrayListOf()
 
-    lateinit var alertDialog: AlertDialog
+    var states: ArrayList<String> = arrayListOf()
 
-    val data = ArrayList<DataEntry>()
+    val finalCountryResponse = arrayListOf<Model.CountryResponse>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,10 +29,27 @@ class MainActivity : AppCompatActivity() {
 
         getCurrentUSAConfirmed()
 
-        // Set up progress before call
-        //AlertDialog
-        // show it
+        val options = resources.getStringArray(R.array.Options)
+        val arrayAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, options)
 
+        listView.adapter = arrayAdapter
+
+        listView.setOnItemClickListener { _, _, position: Int, id: Long ->
+
+            if(finalCountryResponse.isNotEmpty()) {
+                when (position) {
+                    0 -> {
+                        val intent = Intent(this, AllStatesActivity::class.java)
+                        intent.putParcelableArrayListExtra("data", finalCountryResponse) // Be sure con is not null here
+                        startActivity(intent)
+                    }
+                    1 -> Toast.makeText(this, options[position].toString(), Toast.LENGTH_LONG).show()
+                    else -> Toast.makeText(this, options[position].toString(), Toast.LENGTH_LONG).show()
+                }
+            } else {
+                Toast.makeText(this, "Loading...", LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun getCurrentUSAConfirmed() {
@@ -52,14 +65,26 @@ class MainActivity : AppCompatActivity() {
                 call: Call<ArrayList<Model.CountryResponse>>,
                 response: Response<ArrayList<Model.CountryResponse>>
             ) {
+
                 if (response.code() == 200) {
                     countryResponse = response.body()!!
 
-                    countryResponse.forEach {
-                        println("State ${it.provinceState}")
+                    countryResponse.forEach { it ->
+                        if (!finalCountryResponse.stream().map { it.provinceState }.collect(Collectors.toList()).contains(
+                                it.provinceState
+                            )
+                        ) {
+                            finalCountryResponse.add(it)
+                        }
                     }
 
-                    populateCountryResponseChart(countryResponse)
+                    countryResponse.forEach {
+                        println("State ${it.provinceState}")
+                        if (!states.contains(it.provinceState)) {
+                            it.provinceState?.let { it1 -> states.add(it1) }
+                        }
+                    }
+
                 }
             }
 
@@ -69,24 +94,7 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    fun populateCountryResponseChart(countryResponse: ArrayList<Model.CountryResponse>){
-
-        val pie = AnyChart.pie()
-
-        countryResponse.forEach{
-            data.add(ValueDataEntry(it.provinceState, it.active))
-        }
-//        data.add(ValueDataEntry("John", 10000))
-//        data.add(ValueDataEntry("Jake", 12000))
-//        data.add(ValueDataEntry("Peter", 18000))
-        pie.setData(data)
-
-        val anyChartView = findViewById<AnyChartView>(R.id.any_chart_view)
-        anyChartView.setChart(pie)
-    }
-
     companion object {
         var BaseUrl = "https://covid19.mathdro.id/api/"
     }
-
 }
