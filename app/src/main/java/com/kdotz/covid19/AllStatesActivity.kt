@@ -6,7 +6,6 @@ import com.anychart.anychart.AnyChart
 import com.anychart.anychart.AnyChartView
 import com.anychart.anychart.DataEntry
 import com.anychart.anychart.ValueDataEntry
-import com.kdotz.covid19.model.Model
 
 class AllStatesActivity : AppCompatActivity() {
 
@@ -20,12 +19,12 @@ class AllStatesActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_all_states)
 
-        val countryResponse : ArrayList<Model.CountryResponse> = intent.extras.getParcelableArrayList("data")
+        val countryMap = intent.getSerializableExtra("dataMap") as HashMap<*, *>
 
         pie = AnyChart.pie()
 
-        countryResponse.forEach{
-                data.add(ValueDataEntry(it.provinceState, it.active))
+        countryMap.forEach {(k, v) ->
+            data.add(ValueDataEntry(k.toString(), v.toString().toInt()))
         }
 
         pie.setData(data)

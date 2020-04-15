@@ -1,20 +1,19 @@
 package com.kdotz.covid19
 
-import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.widget.ArrayAdapter
+import android.view.View
+import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
-import android.widget.Toast.LENGTH_LONG
 import com.kdotz.covid19.model.Model
-import kotlinx.android.synthetic.main.activity_main.*
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-class MainActivity : AppCompatActivity() {
+class StateActivity : AppCompatActivity() {
 
     var countryResponse: ArrayList<Model.CountryResponse> = arrayListOf()
 
@@ -22,44 +21,33 @@ class MainActivity : AppCompatActivity() {
 
     val finalCountryResponse = arrayListOf<Model.CountryResponse>()
 
-    private var countryMap : HashMap<String, Int> = hashMapOf()
+    private var activeCountyMap: HashMap<String, Int> = hashMapOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_state)
+        generateCountryMaps()
+    }
 
-        getCurrentUSAConfirmed()
+    fun onClick(view: View) {
+        val editText = findViewById<EditText>(R.id.editText)
+        val activeTextView = findViewById<TextView>(R.id.active)
 
-        val options = resources.getStringArray(R.array.Options)
-        val arrayAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, options)
-
-        listView.adapter = arrayAdapter
-
-        listView.setOnItemClickListener { _, _, position: Int, id: Long ->
-
-            if(countryMap.isNotEmpty()) {
-                when (position) {
-                    0 -> {
-                        val intent = Intent(this, AllStatesActivity::class.java)
-                        intent.putParcelableArrayListExtra("data", finalCountryResponse) // Be sure con is not null here
-                        intent.putExtra("dataMap", countryMap)
-                        startActivity(intent)
-                    }
-                    1 -> {
-                        val intent = Intent(this, StateActivity::class.java)
-                        startActivity(intent)
-                    }
-                    else -> Toast.makeText(this, options[position].toString(), LENGTH_LONG).show()
-                }
-            } else {
-                Toast.makeText(this, "Loading...", LENGTH_LONG).show()
+        if (activeCountyMap.isNotEmpty()) {
+            activeCountyMap[editText.text.toString()]?.let {
+                activeTextView.text = it.toString()
+            } ?: run {
+                Toast.makeText(this, " ${editText.text} does not have any data. Please try again.", Toast.LENGTH_LONG)
+                    .show()
             }
+        } else {
+            Toast.makeText(this, "Loading...", Toast.LENGTH_LONG).show()
         }
     }
 
-    private fun getCurrentUSAConfirmed() {
+    private fun generateCountryMaps() {
         val retrofit = Retrofit.Builder()
-            .baseUrl(BaseUrl)
+            .baseUrl(MainActivity.BaseUrl)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
         val service = retrofit.create(CovidApiService::class.java)
@@ -84,7 +72,7 @@ class MainActivity : AppCompatActivity() {
 //                    }
 
                     countryResponse.forEach {
-                        countryMap.merge(it.provinceState, it.active, Integer::sum)
+                        activeCountyMap.merge(it.provinceState, it.active, Integer::sum)
                     }
 
                     countryResponse.forEach {
@@ -103,7 +91,4 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    companion object {
-        var BaseUrl = "https://covid19.mathdro.id/api/"
-    }
 }

@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">Covid19</string>
     <string name="title_activity_all_states">States Active Cases</string>
+    <string name="enter">Enter</string>
+    <string name="enter_a_state">Enter a State</string>
+    <string name="active_cases">Active Cases</string>
     <string-array name="Options">
         <item name="option">All States Pie Chart</item>
         <item name="option">Find Your State</item>
