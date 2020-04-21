@@ -28,7 +28,9 @@
                 android:name=".AllStatesActivity"
                 android:label="@string/title_activity_all_states"
                 android:parentActivityName=".MainActivity"/>
-        <activity android:name=".StateActivity">
+        <activity android:name=".StateActivity"
+                  android:label="Find Your State"
+                  android:parentActivityName=".MainActivity">
         </activity>
     </application>
 

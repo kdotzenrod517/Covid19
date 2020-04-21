@@ -20,9 +20,9 @@ class MainActivity : AppCompatActivity() {
 
     var states: ArrayList<String> = arrayListOf()
 
-    val finalCountryResponse = arrayListOf<Model.CountryResponse>()
+    private val finalCountryResponse = arrayListOf<Model.CountryResponse>()
 
-    private var countryMap : HashMap<String, Int> = hashMapOf()
+    private var countryMap: HashMap<String, Int> = hashMapOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,7 +37,7 @@ class MainActivity : AppCompatActivity() {
 
         listView.setOnItemClickListener { _, _, position: Int, id: Long ->
 
-            if(countryMap.isNotEmpty()) {
+            if (countryMap.isNotEmpty()) {
                 when (position) {
                     0 -> {
                         val intent = Intent(this, AllStatesActivity::class.java)
@@ -47,6 +47,8 @@ class MainActivity : AppCompatActivity() {
                     }
                     1 -> {
                         val intent = Intent(this, StateActivity::class.java)
+                        states.sort()
+                        intent.putExtra("states", states) // Be sure con is not null here
                         startActivity(intent)
                     }
                     else -> Toast.makeText(this, options[position].toString(), LENGTH_LONG).show()
@@ -74,26 +76,15 @@ class MainActivity : AppCompatActivity() {
                 if (response.code() == 200) {
                     countryResponse = response.body()!!
 
-//                    countryResponse.forEach { it ->
-//                        if (!finalCountryResponse.stream().map { it.provinceState }.collect(Collectors.toList()).contains(
-//                                it.provinceState
-//                            )
-//                        ) {
-//                            finalCountryResponse.add(it)
-//                        }
-//                    }
-
                     countryResponse.forEach {
                         countryMap.merge(it.provinceState, it.active, Integer::sum)
                     }
 
                     countryResponse.forEach {
-                        println("State ${it.provinceState}")
-                        if (!states.contains(it.provinceState)) {
-                            it.provinceState?.let { it1 -> states.add(it1) }
+                        if (it.provinceState !in states) {
+                            states.add(it.provinceState)
                         }
                     }
-
                 }
             }
 
